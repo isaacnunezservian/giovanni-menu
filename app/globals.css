@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta Giovanini - Rojos vibrantes + tonos helado */
+    --background: 0 0% 98%;
+    --foreground: 280 2% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 280 2% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 280 2% 15%;
+    
+    /* Rojo principal de la marca */
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Rosa cremoso helado */
+    --secondary: 15 35% 85%;
+    --secondary-foreground: 25 25% 20%;
+    
+    /* Tonos pastel */
+    --muted: 280 10% 95%;
+    --muted-foreground: 280 5% 45%;
+    
+    /* Crema/vainilla */
+    --accent: 80 60% 96%;
+    --accent-foreground: 25 25% 20%;
+    
+    --destructive: 25 95% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 280 5% 90%;
+    --input: 280 5% 90%;
+    --ring: 25 95% 53%;
+    
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 280 10% 12%;
+    --foreground: 0 5% 95%;
+    --card: 280 10% 15%;
+    --card-foreground: 0 5% 95%;
+    --popover: 280 10% 15%;
+    --popover-foreground: 0 5% 95%;
+    --primary: 25 95% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 280 10% 25%;
+    --secondary-foreground: 15 35% 90%;
+    --muted: 280 10% 20%;
+    --muted-foreground: 280 5% 60%;
+    --accent: 280 10% 25%;
+    --accent-foreground: 80 60% 96%;
+    --destructive: 25 95% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 280 10% 25%;
+    --input: 280 10% 25%;
+    --ring: 25 95% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+  
+  h1, h2, h3 {
+    font-family: var(--font-display), cursive;
+    font-weight: 600;
+  }
+}
+
+/* Animaciones custom para helados */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes melt {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0.7;
+    transform: translateY(3px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-melt {
+  animation: melt 2s ease-in-out infinite alternate;
+}

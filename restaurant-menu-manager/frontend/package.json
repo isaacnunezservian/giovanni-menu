@@ -1,0 +1,21 @@
+{
+  "name": "restaurant-menu-manager-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for managing restaurant menu items.",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "live-server src",
+    "build": "webpack --mode production"
+  },
+  "dependencies": {
+    "firebase": "^9.0.0",
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.1",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^4.0.0"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}

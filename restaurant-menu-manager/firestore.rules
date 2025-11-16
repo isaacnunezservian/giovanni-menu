@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /menu/{menuItem} {
+      allow read: if true; // Allow read access to all users
+      allow create: if request.auth != null; // Allow authenticated users to add items
+      allow update: if request.auth != null && request.resource.data.price is number; // Allow authenticated users to update prices
+      allow delete: if request.auth != null; // Allow authenticated users to delete items
+    }
+  }
+}
