@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { db } from "@/lib/firebaseClient";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import Menu from "./menu";
@@ -117,10 +120,25 @@ async function fetchMenuDataFromFirestore(): Promise<MenuCategory[]> {
   return menuData;
 }
 
-export default async function MenuWrapper() {
-  const fetchedMenuData = await fetchMenuDataFromFirestore();
+export default function MenuWrapper() {
+  const [menuData, setMenuData] = useState<MenuCategory[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!fetchedMenuData || fetchedMenuData.length === 0) {
+  useEffect(() => {
+    async function loadMenu() {
+      try {
+        const fetchedMenuData = await fetchMenuDataFromFirestore();
+        setMenuData(fetchedMenuData);
+      } catch (error) {
+        console.error("Error loading menu:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadMenu();
+  }, []);
+
+  if (loading) {
     return (
       <section id="menu" className="relative px-4 py-24">
         <div className="max-w-6xl mx-auto text-center text-gray-500">
@@ -130,5 +148,15 @@ export default async function MenuWrapper() {
     );
   }
 
-  return <Menu data={fetchedMenuData} />;
+  if (!menuData || menuData.length === 0) {
+    return (
+      <section id="menu" className="relative px-4 py-24">
+        <div className="max-w-6xl mx-auto text-center text-gray-500">
+          Cargando menú...
+        </div>
+      </section>
+    );
+  }
+
+  return <Menu data={menuData} />;
 }

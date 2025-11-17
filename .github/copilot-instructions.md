@@ -3,6 +3,10 @@
 ## Project Overview
 Single-page landing for Heladerías Giovanini ice cream shop in Buenos Aires. Next.js 15 App Router, React 18, TypeScript, Tailwind CSS with **Firebase Firestore backend** for dynamic menu management. Six smooth-scrolling sections with vibrant brand identity.
 
+**Stack**: Next.js 15.0.3, React 18.3.1, TypeScript 5, Tailwind CSS 3.4.14, Firebase 12.5.0  
+**Package Manager**: pnpm (preferred) or npm  
+**Deploy Platform**: Netlify with `@netlify/plugin-nextjs`
+
 ## Architecture Essentials
 
 ### Component Flow
@@ -10,6 +14,13 @@ Single-page landing for Heladerías Giovanini ice cream shop in Buenos Aires. Ne
 - **Client-side only**: All interactive sections require `"use client"` directive (no SSR for animations/state)
 - **Menu data flow**: Firebase Firestore (backend) → MenuWrapper (Server Component) → Menu (Client Component)
 - **No route nesting**: Single-page app with smooth scroll navigation via section IDs
+
+### Critical Dependencies
+- `firebase` (12.5.0): Firestore client SDK for menu data
+- `next` (15.0.3): App Router with React Server Components
+- `lucide-react`: Icon library for UI decorations
+- `tailwind-merge` + `clsx`: Utility for conditional Tailwind classes (see `lib/utils.ts`)
+- `@vercel/analytics`: Built-in analytics (no config needed)
 
 ### Menu System Architecture (CRITICAL)
 
@@ -137,16 +148,40 @@ interface MenuCategory {
 
 ### Commands (pnpm preferred)
 ```powershell
-pnpm dev              # localhost:3000
-pnpm build            # Next.js → .next/ (check for TS errors despite ignoreBuildErrors)
+pnpm install          # Install dependencies
+pnpm dev              # Dev server on localhost:3000
+pnpm build            # Production build → .next/ (ignores TS errors)
 pnpm start            # Test production build locally
-netlify deploy --prod # Deploy (requires netlify-cli globally installed)
+pnpm lint             # Run ESLint (not enforced pre-commit)
+netlify deploy --prod # Deploy to production (requires netlify-cli)
 ```
+
+### Environment Setup (REQUIRED)
+**Critical**: Copy `.env.local.example` to `.env.local` and populate Firebase credentials:
+```bash
+cp .env.local.example .env.local
+```
+Required variables (get from Firebase Console → Project Settings → Web App):
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` (default: `digital-menu-4e904`)
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
+
+**Note**: `NEXT_PUBLIC_` prefix makes these client-accessible (safe for Firebase with proper Firestore rules)
 
 ### Build Config
 - **TypeScript**: `ignoreBuildErrors: true` in `next.config.mjs` (pragmatic shipping over strict types)
+- **Images**: `unoptimized: true` required for Netlify static export
 - **Netlify**: `netlify.toml` uses `@netlify/plugin-nextjs` for SSG detection
 - **No pre-commit linting**: `eslint .` script exists but not enforced
+
+### Firebase Client Initialization
+Located in `lib/firebaseClient.ts`:
+- Uses singleton pattern (`getApps().length` check)
+- Exports `db` (Firestore instance) for imports
+- Falls back to hardcoded project ID if env var missing
 
 ## Common Modifications
 
@@ -154,25 +189,34 @@ netlify deploy --prod # Deploy (requires netlify-cli globally installed)
 1. Navigate to appropriate category collection in Firestore (e.g., `combos`)
 2. Add new document with fields: `nombre`, `descripcion`, `precio` (number), `orden`
 3. Set `orden` to position item in sequence (lower numbers appear first)
-4. Rebuild site (`pnpm build`) to reflect changes
+4. Changes reflect on next build (SSG refresh required)
 
 ### Add New Category
 1. Add document to `_categoriesMeta` collection:
-   - `id`: new collection name (kebab-case)
-   - `displayName`: visible title
-   - `icon`: emoji string
+   - `id`: new collection name (kebab-case, e.g., `postres-especiales`)
+   - `displayName`: visible title (e.g., "Postres Especiales")
+   - `icon`: emoji string (e.g., "🍰")
    - `order`: position in menu (1-19+)
 2. Create new collection in Firestore with same name as `id`
-3. Add item documents to new collection
-4. Rebuild site
+3. Add item documents to new collection with fields: `nombre`, `descripcion`, `precio`, `orden`
+4. Rebuild site to fetch new category dynamically
 
 ### Reorder Categories
-1. Edit `order` field in `_categoriesMeta` documents (admin panel)
-2. Rebuild site to reflect new order
+1. Edit `order` field in `_categoriesMeta` documents (via admin panel or Firebase Console)
+2. Rebuild site to reflect new sequence
 
 ### Change Prices
-1. Edit `precio` field (number) in Firestore document
+1. Edit `precio` field (must be number type, not string) in Firestore document
 2. Rebuild site
+3. UI automatically formats with `toLocaleString('es-AR')`
+
+### Use Admin Panel (restaurant-menu-manager/)
+Separate Firebase CRUD web UI in `/restaurant-menu-manager`:
+- **Frontend**: Vanilla JS interface (`frontend/src/`)
+- **Backend**: Firebase Cloud Functions (`backend/functions/src/`)
+- See `restaurant-menu-manager/README.md` for setup
+- Requires separate Firebase credentials in `frontend/src/config.js`
+- Deploy functions: `cd backend/functions && firebase deploy --only functions`
 ### Add Gallery Images
 1. Copy file to `public/images/`
 2. Push object to `images` array in `components/gallery.tsx`:
@@ -211,12 +255,15 @@ Edit `:root` variables in `app/globals.css` (HSL format):
 
 ## Known Gotchas
 
-- **restaurant-menu-manager/**: Separate Firebase CRUD admin panel project - use for editing menu via web UI
-- **Menu prices**: Numbers in Firestore, formatted with `toLocaleString('es-AR')` in UI
-- **Logo**: Path `/images/logo.jpg` may 404 (see `PROJECT-SUMMARY.md` pending tasks)
+- **restaurant-menu-manager/**: Separate Firebase CRUD admin panel project - use for editing menu via web UI (see "Use Admin Panel" section above)
+- **Menu prices**: Must be **numbers** in Firestore (not strings), formatted with `toLocaleString('es-AR')` in UI
+- **Logo**: Path `/images/logo.jpg` may 404 - pending real logo (see `LOGO-INSTRUCTIONS.md`)
 - **No contact form**: Contact section is info-only (map + address + social)
 - **TypeScript relaxed**: Focus on shipping over strict types (`ignoreBuildErrors: true`)
-- **Firebase config**: Credentials in environment variables (`.env.local` not in repo)
+- **Firebase config**: Credentials in `.env.local` (not in repo, use `.env.local.example` template)
+- **SSG at build time**: Menu data fetched during build, not at runtime - changes require rebuild
+- **Empty descriptions**: `descripcion: ""` is valid in Firestore, handled by conditional rendering in UI
+- **Category filtering**: `MenuWrapper.tsx` returns all categories (including empty ones) - modify `fetchMenuDataFromFirestore()` to filter if needed
 
 ## Testing Checklist
 
@@ -231,5 +278,14 @@ Edit `:root` variables in `app/globals.css` (HSL format):
 **Platform**: Netlify (configured via `netlify.toml`)
 - Build: `npm run build` (auto-detected)
 - Publish: `.next/`
-- **No environment variables** (all data is static)
+- **Environment Variables**: Must configure Firebase credentials in Netlify dashboard (not needed for build, only runtime)
 - Post-deploy: Verify smooth scroll + images on live URL
+
+### Netlify Environment Variables Setup
+Navigate to Netlify dashboard → Site settings → Environment variables, add:
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
